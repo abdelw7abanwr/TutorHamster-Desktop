@@ -1,0 +1,22 @@
+{
+  "name": "tutorhamster-desktop",
+  "version": "1.0.0",
+  "description": "TutorHamster Desktop App",
+  "main": "app/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/electron/minimal-repro",
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial",
+    "demo"
+  ],
+  "author": "GitHub",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "^45.1.0"
+  }
+}

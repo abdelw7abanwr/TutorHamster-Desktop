@@ -1,0 +1,32 @@
+{
+  "lang": "es",
+  "dir": "ltr",
+  "badge": "Plataforma de Clases Inteligentes",
+  "title": "TutorHamster",
+  "tagline": "Entorno de Aprendizaje Interactivo en Vivo",
+  "students": "Estudiantes",
+  "teachers": "Profesores",
+  "admin": "Administración",
+  "loading": "Preparando tu aula virtual...",
+  "ready": "¡Listo para comenzar!",
+  "permTitle": "Permiso de Cámara y Micrófono",
+  "permDesc": "La app requiere acceso a la cámara y al micrófono para unirse a las clases en vivo e interactuar con profesores y compañeros.",
+  "permGrant": "Permitir",
+  "permLater": "Más tarde",
+  "permCamera": "Cámara",
+  "permMic": "Micrófono",
+  "welcomeTitle": "¡Te damos la bienvenida a TutorHamster! 🎓",
+  "welcomeBody": "Te deseamos una jornada de aprendizaje inspiradora y agradable hoy.",
+  "offlineTitle": "Lo sentimos, no hay conexión a internet",
+  "offlineDesc": "Por favor, comprueba tu conexión de red para continuar a la plataforma educativa.",
+  "offlineConnecting": "Intentando conectar a internet...",
+  "offlineRetry": "Reintentar ahora",
+  "onlineNotificationTitle": "¡Conectado a Internet! 🌐",
+  "onlineNotificationBody": "Conexión restablecida con éxito. Abriendo la plataforma.",
+  "features": [
+    { "role": "all", "text": "Plataforma educativa para asistir a clases interactivas en vivo" },
+    { "role": "students", "text": "Para Estudiantes: Asiste a clases, interactúa y supera retos" },
+    { "role": "teachers", "text": "Para Profesores: Gestiona cursos, imparte y evalúa fácilmente" },
+    { "role": "admin", "text": "Para la Administración: Control de horarios, asistencia y gestión" }
+  ]
+}

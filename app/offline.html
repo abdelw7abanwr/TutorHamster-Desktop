@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TutorHamster</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --apple-blue: #0071e3;
+      --apple-blue-hover: #0077ed;
+      --apple-surface: #f5f5f7;
+      --apple-border: rgba(0, 0, 0, 0.08);
+      --apple-border-subtle: rgba(0, 0, 0, 0.05);
+      --text-primary: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --text-muted: #86868b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    body {
+      font-family: 'Baloo Bhaijaan 2', -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+      background: radial-gradient(120% 120% at 50% 10%, #ffffff 0%, #f7f7f9 100%);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      padding: 24px;
+    }
+
+    /* Apple-style Centered Offline Card */
+    .offline-card {
+      width: 100%;
+      max-width: 520px;
+      background: #ffffff;
+      border: 1px solid var(--apple-border);
+      border-radius: 26px;
+      box-shadow: 
+        0 25px 60px -15px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(0, 0, 0, 0.04),
+        0 8px 24px -4px rgba(0, 0, 0, 0.04);
+      padding: 40px 36px 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+
+    /* Apple Wi-Fi Icon Badge with Pulse Animation */
+    .wifi-badge {
+      width: 80px;
+      height: 80px;
+      border-radius: 24px;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ef4444;
+      margin-bottom: 22px;
+      position: relative;
+    }
+
+    .wifi-badge img,
+    .wifi-badge svg {
+      width: 44px;
+      height: 44px;
+      animation: wifiPulse 2.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes wifiPulse {
+      0% { transform: scale(0.96); opacity: 0.85; }
+      100% { transform: scale(1.04); opacity: 1; }
+    }
+
+    .offline-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.25;
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+
+    .offline-desc {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      max-width: 420px;
+      margin-bottom: 24px;
+    }
+
+    /* Reconnection Status with Apple 12-Blade Activity Spinner */
+    .status-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 18px;
+      background: var(--apple-surface);
+      border: 1px solid var(--apple-border-subtle);
+      border-radius: 20px;
+      margin-bottom: 24px;
+    }
+
+    .status-text {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    /* 12-Blade Authentic Apple Spinner */
+    .apple-spinner {
+      position: relative;
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .apple-spinner div {
+      width: 9%;
+      height: 26%;
+      background: var(--apple-blue);
+      position: absolute;
+      left: 45.5%;
+      top: 37%;
+      opacity: 0;
+      border-radius: 50px;
+      animation: appleFade 1.2s linear infinite;
+    }
+    .apple-spinner .bar1  { transform: rotate(0deg) translate(0, -135%); animation-delay: 0s; }
+    .apple-spinner .bar2  { transform: rotate(30deg) translate(0, -135%); animation-delay: -1.1s; }
+    .apple-spinner .bar3  { transform: rotate(60deg) translate(0, -135%); animation-delay: -1.0s; }
+    .apple-spinner .bar4  { transform: rotate(90deg) translate(0, -135%); animation-delay: -0.9s; }
+    .apple-spinner .bar5  { transform: rotate(120deg) translate(0, -135%); animation-delay: -0.8s; }
+    .apple-spinner .bar6  { transform: rotate(150deg) translate(0, -135%); animation-delay: -0.7s; }
+    .apple-spinner .bar7  { transform: rotate(180deg) translate(0, -135%); animation-delay: -0.6s; }
+    .apple-spinner .bar8  { transform: rotate(210deg) translate(0, -135%); animation-delay: -0.5s; }
+    .apple-spinner .bar9  { transform: rotate(240deg) translate(0, -135%); animation-delay: -0.4s; }
+    .apple-spinner .bar10 { transform: rotate(270deg) translate(0, -135%); animation-delay: -0.3s; }
+    .apple-spinner .bar11 { transform: rotate(300deg) translate(0, -135%); animation-delay: -0.2s; }
+    .apple-spinner .bar12 { transform: rotate(330deg) translate(0, -135%); animation-delay: -0.1s; }
+
+    @keyframes appleFade {
+      from { opacity: 1; }
+      to { opacity: 0.15; }
+    }
+
+    /* Apple-style Action Button */
+    .btn-retry {
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-size: 14.5px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      background: var(--apple-blue);
+      color: #ffffff;
+      border: none;
+      outline: none;
+      box-shadow: 0 4px 14px rgba(0, 113, 227, 0.3);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .btn-retry:hover {
+      background: var(--apple-blue-hover);
+      box-shadow: 0 6px 18px rgba(0, 113, 227, 0.4);
+      transform: translateY(-1px);
+    }
+    .btn-retry svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2.2;
+    }
+
+    /* RTL Support */
+    html[dir="rtl"] {
+      direction: rtl;
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-card">
+    <!-- Wi-Fi Disconnected Custom SVG Icon -->
+    <div class="wifi-badge">
+      <img src="../assets/no-wifi-svgrepo-com.svg" alt="No Wi-Fi" class="wifi-icon" />
+    </div>
+
+    <h1 class="offline-title" id="offline-title"></h1>
+    <p class="offline-desc" id="offline-desc"></p>
+
+    <!-- Attempting to Connect Box with Apple Activity Spinner -->
+    <div class="status-box">
+      <div class="apple-spinner">
+        <div class="bar1"></div><div class="bar2"></div><div class="bar3"></div><div class="bar4"></div>
+        <div class="bar5"></div><div class="bar6"></div><div class="bar7"></div><div class="bar8"></div>
+        <div class="bar9"></div><div class="bar10"></div><div class="bar11"></div><div class="bar12"></div>
+      </div>
+      <span class="status-text" id="offline-connecting"></span>
+    </div>
+
+    <!-- Apple-style Manual Retry Button -->
+    <button class="btn-retry" id="btn-retry">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+      </svg>
+      <span id="btn-retry-text"></span>
+    </button>
+  </div>
+
+  <script>
+    // Strictly load localized strings from the external locales files
+    const lang = window.offlineLocale || window.splashLocale;
+
+    // Apply Language & Direction
+    document.documentElement.setAttribute('lang', lang.lang || 'en');
+    document.documentElement.setAttribute('dir', lang.dir || 'ltr');
+
+    // Populate elements strictly from locale
+    document.getElementById('offline-title').innerText = lang.offlineTitle;
+    document.getElementById('offline-desc').innerText = lang.offlineDesc;
+    document.getElementById('offline-connecting').innerText = lang.offlineConnecting;
+    document.getElementById('btn-retry-text').innerText = lang.offlineRetry;
+
+    let isChecking = false;
+
+    // Check internet connectivity by sending a lightweight probe
+    async function checkInternet() {
+      if (isChecking) return;
+      isChecking = true;
+
+      try {
+        // Probe internet access using a reliable lightweight endpoint or image
+        const response = await fetch('https://www.google.com/favicon.ico?' + Date.now(), {
+          mode: 'no-cors',
+          cache: 'no-store'
+        });
+
+        // If fetch didn't throw, we have internet access!
+        if (window.offlineAPI && window.offlineAPI.notifyInternetRestored) {
+          window.offlineAPI.notifyInternetRestored();
+        }
+      } catch (err) {
+        // Still offline
+      } finally {
+        isChecking = false;
+      }
+    }
+
+    // 1. Listen for browser online event
+    window.addEventListener('online', () => {
+      checkInternet();
+    });
+
+    // 2. Poll every 3 seconds to auto-detect connection restoration
+    const pollInterval = setInterval(() => {
+      checkInternet();
+    }, 3000);
+
+    // 3. Manual retry button
+    document.getElementById('btn-retry').addEventListener('click', () => {
+      checkInternet();
+    });
+  </script>
+</body>
+</html>
+

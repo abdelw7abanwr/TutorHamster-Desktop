@@ -1,0 +1,32 @@
+{
+  "lang": "en",
+  "dir": "ltr",
+  "badge": "Smart Classroom Platform",
+  "title": "TutorHamster",
+  "tagline": "Interactive Online Learning Environment",
+  "students": "Students",
+  "teachers": "Teachers",
+  "admin": "Management",
+  "loading": "Preparing your digital classroom...",
+  "ready": "Ready to launch!",
+  "permTitle": "Camera & Microphone Access",
+  "permDesc": "The app requires access to your camera and microphone to attend live classes and interact with teachers and peers.",
+  "permGrant": "Grant",
+  "permLater": "Later",
+  "permCamera": "Camera",
+  "permMic": "Microphone",
+  "welcomeTitle": "Welcome to TutorHamster! 🎓",
+  "welcomeBody": "Wishing you an inspiring and delightful learning journey today.",
+  "offlineTitle": "Sorry, No Internet Connection",
+  "offlineDesc": "Please check your network settings to proceed to the educational platform.",
+  "offlineConnecting": "Attempting to connect to the internet...",
+  "offlineRetry": "Retry Now",
+  "onlineNotificationTitle": "Internet Connected! 🌐",
+  "onlineNotificationBody": "Connection restored successfully. Loading the platform now.",
+  "features": [
+    { "role": "all", "text": "An advanced platform for attending live interactive classes" },
+    { "role": "students", "text": "For Students: Attend classes, interact live, and track progress" },
+    { "role": "teachers", "text": "For Teachers: Manage classrooms, teach easily, and assess tasks" },
+    { "role": "admin", "text": "For Management: Seamless schedules, attendance, and oversight" }
+  ]
+}

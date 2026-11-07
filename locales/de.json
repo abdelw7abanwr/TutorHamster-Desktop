@@ -1,0 +1,32 @@
+{
+  "lang": "de",
+  "dir": "ltr",
+  "badge": "Smarte Lernplattform",
+  "title": "TutorHamster",
+  "tagline": "Interaktive Bildungs- und Unterrichtsumgebung",
+  "students": "Schüler",
+  "teachers": "Lehrer",
+  "admin": "Verwaltung",
+  "loading": "Digitaler Unterricht wird vorbereitet...",
+  "ready": "Bereit zum Start!",
+  "permTitle": "Kamera- und Mikrofonberechtigung",
+  "permDesc": "Die App benötigt Zugriff auf Ihre Kamera und Ihr Mikrofon, um am Live-Unterricht teilzunehmen und mitzureden.",
+  "permGrant": "Erlauben",
+  "permLater": "Später",
+  "permCamera": "Kamera",
+  "permMic": "Mikrofon",
+  "welcomeTitle": "Willkommen bei TutorHamster! 🎓",
+  "welcomeBody": "Wir wünschen Ihnen heute eine inspirierende und erfolgreiche Lernerfahrung.",
+  "offlineTitle": "Keine Internetverbindung",
+  "offlineDesc": "Bitte überprüfen Sie Ihre Netzwerkeinstellungen, um zur Lernplattform zu gelangen.",
+  "offlineConnecting": "Verbindung zum Internet wird versucht...",
+  "offlineRetry": "Jetzt erneut versuchen",
+  "onlineNotificationTitle": "Internetverbindung hergestellt! 🌐",
+  "onlineNotificationBody": "Verbindung erfolgreich wiederhergestellt. Plattform wird geladen.",
+  "features": [
+    { "role": "all", "text": "Moderne Plattform zur Teilnahme am interaktiven Unterricht" },
+    { "role": "students", "text": "Für Schüler: Live-Klassen besuchen und gemeinsam lernen" },
+    { "role": "teachers", "text": "Für Lehrer: Klassen mühelos leiten und Unterricht gestalten" },
+    { "role": "admin", "text": "Für die Verwaltung: Umfassende Stundenpläne und Schulorganisation" }
+  ]
+}

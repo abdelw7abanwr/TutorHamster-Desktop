@@ -1,0 +1,32 @@
+{
+  "lang": "fr",
+  "dir": "ltr",
+  "badge": "Plateforme de Classe Intelligente",
+  "title": "TutorHamster",
+  "tagline": "Environnement Pédagogique Interactif en Direct",
+  "students": "Élèves",
+  "teachers": "Enseignants",
+  "admin": "Administration",
+  "loading": "Préparation de votre classe numérique...",
+  "ready": "Prêt à démarrer !",
+  "permTitle": "Accès Caméra et Microphone",
+  "permDesc": "L'application a besoin d'accéder à votre caméra et microphone pour participer aux cours en direct et échanger en temps réel.",
+  "permGrant": "Autoriser",
+  "permLater": "Plus tard",
+  "permCamera": "Caméra",
+  "permMic": "Microphone",
+  "welcomeTitle": "Bienvenue sur TutorHamster ! 🎓",
+  "welcomeBody": "Nous vous souhaitons une expérience d'apprentissage inspirante et agréable aujourd'hui.",
+  "offlineTitle": "Désolé, aucune connexion Internet",
+  "offlineDesc": "Veuillez vérifier vos paramètres réseau pour accéder à la plateforme éducative.",
+  "offlineConnecting": "Tentative de connexion à Internet en cours...",
+  "offlineRetry": "Réessayer maintenant",
+  "onlineNotificationTitle": "Connecté à Internet ! 🌐",
+  "onlineNotificationBody": "Connexion rétablie avec succès. Chargement de la plateforme.",
+  "features": [
+    { "role": "all", "text": "Plateforme éducative pour assister aux cours en direct" },
+    { "role": "students", "text": "Pour les Élèves : Suivez les cours, échangez et progressez" },
+    { "role": "teachers", "text": "Pour les Enseignants : Gérez les classes et partagez vos cours" },
+    { "role": "admin", "text": "Pour l'Administration : Suivi complet des plannings et présences" }
+  ]
+}

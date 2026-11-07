@@ -1,0 +1,254 @@
+// Modules to control application life and create native browser window
+const { app, BrowserWindow, Menu, ipcMain, session, Notification } = require('electron')
+const path = require('node:path')
+const fs = require('node:fs')
+const localesModulePath = fs.existsSync(path.join(__dirname, '..', 'locales'))
+  ? path.join(__dirname, '..', 'locales')
+  : path.join(__dirname, 'locales')
+const { getLocale } = require(localesModulePath)
+
+// Load environment variables from root .env or app .env
+const rootEnv = path.join(__dirname, '..', '.env')
+const localEnv = path.join(__dirname, '.env')
+const envPath = fs.existsSync(rootEnv) ? rootEnv : localEnv
+
+if (fs.existsSync(envPath) && typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile(envPath)
+  } catch (err) {
+    console.error('Failed to load .env file:', err)
+  }
+}
+
+// Media permissions tracking
+let mediaPermissionStatus = 'unknown'
+let welcomeNotificationSent = false
+let isOffline = false
+
+// Helper to send localized system welcome notification once
+function sendWelcomeNotification () {
+  if (welcomeNotificationSent) return
+  welcomeNotificationSent = true
+
+  const systemLocale = app.getLocale() || 'en'
+  const localeData = getLocale(systemLocale)
+
+  if (Notification.isSupported()) {
+    const notification = new Notification({
+      title: localeData.welcomeTitle || 'Welcome to TutorHamster! 🎓',
+      body: localeData.welcomeBody || 'Wishing you an inspiring and delightful learning journey today.',
+      silent: false
+    })
+
+    // Do nothing on click (prevent any action or window focus)
+    notification.on('click', (event) => {
+      if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault()
+      }
+    })
+
+    notification.show()
+  }
+}
+
+// Helper to send localized internet restored notification
+function sendInternetRestoredNotification () {
+  const systemLocale = app.getLocale() || 'en'
+  const localeData = getLocale(systemLocale)
+
+  if (Notification.isSupported()) {
+    const notification = new Notification({
+      title: localeData.onlineNotificationTitle || 'Internet Connected! 🌐',
+      body: localeData.onlineNotificationBody || 'Connection restored successfully. Loading the platform now.',
+      silent: false
+    })
+
+    notification.on('click', (event) => {
+      if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault()
+      }
+    })
+
+    notification.show()
+  }
+}
+
+// Handle locale request from splash and offline screens
+ipcMain.on('get-splash-locale', (event) => {
+  const systemLocale = app.getLocale() || 'en'
+  event.returnValue = getLocale(systemLocale)
+})
+
+// Handle media permission response from splash screen
+ipcMain.on('media-permission-response', (event, status) => {
+  mediaPermissionStatus = status
+})
+
+ipcMain.on('get-media-permission-status', (event) => {
+  event.returnValue = mediaPermissionStatus
+})
+
+// Handle internet restored event from offline screen
+ipcMain.on('internet-restored', () => {
+  if (isOffline && mainWindow && !mainWindow.isDestroyed()) {
+    isOffline = false
+    sendInternetRestoredNotification()
+    const targetUrl = process.env.APP_URL || 'https://app.tutorhamster.com/'
+    mainWindow.loadURL(targetUrl)
+  }
+})
+
+// Handle manual retry connection
+ipcMain.on('retry-connection', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const targetUrl = process.env.APP_URL || 'https://app.tutorhamster.com/'
+    mainWindow.loadURL(targetUrl)
+  }
+})
+
+let mainWindow = null
+let splashWindow = null
+
+function createWindows () {
+  // 1. Create Splash Window
+  splashWindow = new BrowserWindow({
+    width: 820,
+    height: 510,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    center: true,
+    resizable: false,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'splash-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  })
+
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'))
+
+  splashWindow.once('ready-to-show', () => {
+    splashWindow.show()
+  })
+
+  // 2. Create Main Window in background
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
+    show: false,
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  })
+
+  // Remove menu bar
+  mainWindow.setMenu(null)
+  Menu.setApplicationMenu(null)
+
+  // Load URL from environment variables or fallback
+  const targetUrl = process.env.APP_URL || 'https://app.tutorhamster.com/'
+  mainWindow.loadURL(targetUrl)
+
+  // Toggle Apple loading HUD on page navigation
+  mainWindow.webContents.on('did-start-loading', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('toggle-apple-loading', true)
+    }
+  })
+
+  mainWindow.webContents.on('did-stop-loading', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('toggle-apple-loading', false)
+    }
+  })
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('toggle-apple-loading', false)
+      const currentURL = mainWindow.webContents.getURL()
+      if (!currentURL.includes('offline.html')) {
+        isOffline = false
+        // Send welcome notification if the main window is already shown
+        if (mainWindow.isVisible()) {
+          sendWelcomeNotification()
+        }
+      }
+    }
+  })
+
+  mainWindow.webContents.on('did-fail-load', (event, errorCode) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('toggle-apple-loading', false)
+      // Ignore user abort or subframe cancellation
+      if (errorCode === -3) return
+      if (!isOffline) {
+        isOffline = true
+        mainWindow.loadFile(path.join(__dirname, 'offline.html'))
+      }
+    }
+  })
+
+  // 3. Switch from Splash to Main Window after 10 seconds (10000ms)
+  setTimeout(() => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close()
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show()
+      mainWindow.focus()
+      // Send welcome notification as soon as the main window opens
+      sendWelcomeNotification()
+    }
+  }, 10000)
+
+  mainWindow.on('closed', () => {
+    mainWindow = null
+  })
+}
+
+// This method will be called when Electron has finished
+// initialization and is ready to create browser windows.
+app.whenReady().then(() => {
+  // Set Windows app id for proper desktop toast notifications
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('TutorHamster')
+  }
+  // Automatically grant camera and microphone access to the app
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'media' || permission === 'camera' || permission === 'microphone') {
+      callback(true)
+      return
+    }
+    callback(true)
+  })
+
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+    if (permission === 'media' || permission === 'camera' || permission === 'microphone') {
+      return true
+    }
+    return true
+  })
+
+  createWindows()
+
+  app.on('activate', function () {
+    if (BrowserWindow.getAllWindows().length === 0) createWindows()
+  })
+})
+
+// Quit when all windows are closed, except on macOS. There, it's common
+// for applications and their menu bar to stay active until the user quits
+// explicitly with Cmd + Q.
+app.on('window-all-closed', function () {
+  if (process.platform !== 'darwin') app.quit()
+})
+
+// In this file you can include the rest of your app's specific main process
+// code. You can also put them in separate files and require them here.
