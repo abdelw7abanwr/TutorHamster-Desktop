@@ -1,6 +1,6 @@
 {
   "name": "tutorhamster-desktop",
-  "version": "2.0.2",
+  "version": "2.0.4",
   "description": "TutorHamster Desktop App",
   "main": "app/main.js",
   "scripts": {
@@ -60,7 +60,8 @@
         "dmg",
         "zip"
       ],
-      "icon": "assets/icons/logo-v1-drop-rounded.png"
+      "icon": "assets/icons/logo-v1-drop-rounded.png",
+      "identity": null
     },
     "dmg": {
       "title": "TutorHamster ${version}",
