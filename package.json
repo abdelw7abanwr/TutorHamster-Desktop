@@ -1,6 +1,6 @@
 {
   "name": "tutorhamster-desktop",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "TutorHamster Desktop App",
   "main": "app/main.js",
   "scripts": {
