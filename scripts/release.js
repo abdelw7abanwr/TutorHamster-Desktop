@@ -27,8 +27,8 @@ const env = { ...process.env, GH_TOKEN: token, GITHUB_TOKEN: token }
 
 console.log('🚀 Building and publishing new release to GitHub Releases...\n')
 
-const cmd = process.platform === 'win32' ? 'npx.cmd' : 'npx'
-const builder = spawn(cmd, ['electron-builder', '--win', 'nsis', '--publish', 'always'], {
+const builderCli = path.join(__dirname, '..', 'node_modules', 'electron-builder', 'cli.js')
+const builder = spawn(process.execPath, [builderCli, '--win', 'nsis', '--publish', 'always'], {
   stdio: 'inherit',
   env
 })
