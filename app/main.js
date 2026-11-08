@@ -94,7 +94,11 @@ function sendInternetRestoredNotification () {
 // Handle locale request from splash and offline screens
 ipcMain.on('get-splash-locale', (event) => {
   const systemLocale = app.getLocale() || 'en'
-  event.returnValue = getLocale(systemLocale)
+  const locale = getLocale(systemLocale)
+  event.returnValue = {
+    ...locale,
+    appVersion: app.getVersion()
+  }
 })
 
 // Handle media permission response from splash screen
@@ -128,7 +132,21 @@ ipcMain.on('retry-connection', () => {
 autoUpdater.autoDownload = false
 autoUpdater.autoInstallOnAppQuit = true
 
+// If GitHub token exists in .env, feed it to autoUpdater for private repo testing
+const ghToken = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+if (ghToken) {
+  try {
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'abdelw7abanwr',
+      repo: 'TutorHamster-Desktop',
+      token: ghToken
+    })
+  } catch (e) {}
+}
+
 autoUpdater.on('update-available', (info) => {
+  console.log('[UpdateCheck] Update available via autoUpdater:', info.version)
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('update-available', {
       version: info.version,
@@ -146,6 +164,7 @@ autoUpdater.on('download-progress', (progressObj) => {
 })
 
 autoUpdater.on('update-downloaded', (info) => {
+  console.log('[UpdateCheck] Update downloaded successfully:', info.version)
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('update-downloaded', {
       version: info.version
@@ -154,7 +173,7 @@ autoUpdater.on('update-downloaded', (info) => {
 })
 
 autoUpdater.on('error', (err) => {
-  console.log('autoUpdater error:', err.message)
+  console.log('[UpdateCheck] autoUpdater status/error:', err.message)
 })
 
 // Handle download request from renderer UI
@@ -182,11 +201,12 @@ ipcMain.on('quit-and-install-update', () => {
 
 // Check for updates function (Packaged & Development fallback)
 function checkForAppUpdates () {
+  console.log(`[UpdateCheck] Checking for latest releases... (Current App Version: v${app.getVersion()})`)
   if (app.isPackaged) {
     try {
       autoUpdater.checkForUpdates()
     } catch (err) {
-      console.log('Update check error:', err.message)
+      console.log('[UpdateCheck] autoUpdater check error:', err.message)
     }
   } else {
     checkGitHubReleasesDirectly()
@@ -195,12 +215,18 @@ function checkForAppUpdates () {
 
 // GitHub Releases direct API check
 function checkGitHubReleasesDirectly () {
+  const headers = {
+    'User-Agent': 'TutorHamster-Desktop-App'
+  }
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+  if (token) {
+    headers['Authorization'] = 'Bearer ' + token
+  }
+
   const options = {
     hostname: 'api.github.com',
-    path: '/repos/abdelw7abanwr/TutorHamster-Desktop/releases/latest',
-    headers: {
-      'User-Agent': 'TutorHamster-Desktop-App'
-    }
+    path: '/repos/abdelw7abanwr/TutorHamster-Desktop/releases',
+    headers
   }
 
   https.get(options, (res) => {
@@ -209,22 +235,38 @@ function checkGitHubReleasesDirectly () {
     res.on('end', () => {
       if (res.statusCode === 200) {
         try {
-          const release = JSON.parse(data)
-          const latestTag = (release.tag_name || '').replace(/^v/, '')
-          const currentVersion = app.getVersion()
-          if (latestTag && latestTag !== currentVersion) {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('update-available', {
-                version: release.tag_name,
-                releaseNotes: release.body || '',
-                downloadUrl: release.html_url
-              })
+          const releases = JSON.parse(data)
+          if (Array.isArray(releases) && releases.length > 0) {
+            // Find the latest non-draft release (or newest release)
+            const release = releases.find(r => !r.draft) || releases[0]
+            const latestTag = (release.tag_name || '').replace(/^v/, '')
+            const currentVersion = app.getVersion()
+            console.log(`[UpdateCheck] Latest release on GitHub is: ${release.tag_name} | Current Version: v${currentVersion}`)
+            if (latestTag && latestTag !== currentVersion) {
+              console.log(`[UpdateCheck] New version found (${release.tag_name})! Prompting in-app modal...`)
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('update-available', {
+                  version: release.tag_name,
+                  releaseNotes: release.body || '',
+                  downloadUrl: release.html_url
+                })
+              }
+            } else {
+              console.log(`[UpdateCheck] App is currently up-to-date (v${currentVersion}).`)
             }
+          } else {
+            console.log('[UpdateCheck] No published releases found on GitHub yet.')
           }
-        } catch (e) {}
+        } catch (e) {
+          console.log('[UpdateCheck] JSON parse error:', e.message)
+        }
+      } else {
+        console.log(`[UpdateCheck] GitHub API responded with status ${res.statusCode}.`)
       }
     })
-  }).on('error', () => {})
+  }).on('error', (err) => {
+    console.log('[UpdateCheck] Network error:', err.message)
+  })
 }
 
 let mainWindow = null

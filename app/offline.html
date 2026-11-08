@@ -220,6 +220,8 @@
       </svg>
       <span id="btn-retry-text"></span>
     </button>
+
+    <div style="margin-top: 14px; font-size: 11.5px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.3px;" id="offline-version"></div>
   </div>
 
   <script>
@@ -235,6 +237,9 @@
     document.getElementById('offline-desc').innerText = lang.offlineDesc;
     document.getElementById('offline-connecting').innerText = lang.offlineConnecting;
     document.getElementById('btn-retry-text').innerText = lang.offlineRetry;
+    if (lang.appVersion) {
+      document.getElementById('offline-version').innerText = 'v' + lang.appVersion;
+    }
 
     let isChecking = false;
 
