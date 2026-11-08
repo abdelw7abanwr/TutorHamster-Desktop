@@ -1,9 +1,15 @@
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, Menu, ipcMain, session, Notification, shell } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, session, Notification, shell, nativeImage } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('node:path')
 const fs = require('node:fs')
 const https = require('node:https')
+
+// Set Windows AppUserModelId immediately at module load time so taskbar pinning & icon binding works
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.tutorhamster.desktop')
+}
+
 const localesModulePath = fs.existsSync(path.join(__dirname, '..', 'locales'))
   ? path.join(__dirname, '..', 'locales')
   : path.join(__dirname, 'locales')
@@ -22,11 +28,12 @@ if (fs.existsSync(envPath) && typeof process.loadEnvFile === 'function') {
   }
 }
 
-// Icon paths
+// Icon paths & NativeImage (guarantees correct Win32 taskbar rendering even inside asar)
 const iconsDir = path.join(__dirname, '..', 'assets', 'icons')
 const appIconIco = path.join(iconsDir, 'icon.ico')
 const appIconPng = path.join(iconsDir, 'logo-v1-drop-rounded.png')
-const appIcon = (process.platform === 'win32' && fs.existsSync(appIconIco)) ? appIconIco : appIconPng
+const appIconPath = (process.platform === 'win32' && fs.existsSync(appIconIco)) ? appIconIco : appIconPng
+const appIcon = nativeImage.createFromPath(appIconPath)
 const notificationIcon = path.join(iconsDir, 'notification-icon.png')
 
 // Media permissions tracking
@@ -234,6 +241,7 @@ function createWindows () {
     center: true,
     resizable: false,
     show: false,
+    skipTaskbar: true,
     icon: appIcon,
     webPreferences: {
       preload: path.join(__dirname, 'splash-preload.js'),
@@ -263,6 +271,10 @@ function createWindows () {
       nodeIntegration: false
     }
   })
+
+  if (!appIcon.isEmpty()) {
+    mainWindow.setIcon(appIcon)
+  }
 
   // Remove menu bar
   mainWindow.setMenu(null)
@@ -336,10 +348,6 @@ function createWindows () {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.whenReady().then(() => {
-  // Set Windows app id for proper desktop toast notifications
-  if (process.platform === 'win32') {
-    app.setAppUserModelId('TutorHamster')
-  }
   // Automatically grant camera and microphone access to the app
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
     if (permission === 'media' || permission === 'camera' || permission === 'microphone') {
