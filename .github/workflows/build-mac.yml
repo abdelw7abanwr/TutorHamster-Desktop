@@ -11,6 +11,9 @@ on:
 permissions:
   contents: write
 
+env:
+  ACTIONS_RUNNER_FORCE_ACTIONS_NODE_VERSION: 'node24'
+
 jobs:
   build-mac:
     name: Build macOS DMG & ZIP
@@ -34,12 +37,35 @@ jobs:
       - name: Generate High-Resolution Icons
         run: npm run build:icons
 
-      - name: Build & Publish macOS Artifacts
+      - name: Build macOS Artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-        run: npx electron-builder --mac --publish always
+        run: npx electron-builder --mac
+
+      - name: Attach macOS Artifacts to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          echo "Target version: $VERSION | Tag: $TAG"
+
+          TARGET_TAG=""
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            TARGET_TAG="$TAG"
+          else
+            TARGET_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+          fi
+
+          if [ -n "$TARGET_TAG" ]; then
+            echo "Uploading macOS DMG, ZIP & metadata to release $TARGET_TAG..."
+            gh release upload "$TARGET_TAG" dist/*.dmg dist/*.zip dist/latest-mac.yml --clobber
+            echo "Successfully attached macOS artifacts to $TARGET_TAG!"
+          else
+            echo "No existing release found to attach macOS artifacts."
+          fi
 
       - name: Upload macOS Artifacts to Action Run
         uses: actions/upload-artifact@v4

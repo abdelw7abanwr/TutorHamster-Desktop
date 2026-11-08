@@ -187,8 +187,12 @@ autoUpdater.on('error', (err) => {
 
 let downloadedUpdatePath = null
 
-function downloadUpdateDirectly (fileUrl, version) {
-  const tempPath = path.join(app.getPath('temp'), `TutorHamster-Setup-${version || 'update'}.exe`)
+function downloadUpdateDirectly (fileUrl, version, assetName) {
+  const isMac = process.platform === 'darwin'
+  const defaultExt = isMac ? '.dmg' : '.exe'
+  const ext = path.extname(assetName || fileUrl) || defaultExt
+  const fileName = assetName || `TutorHamster-${version || 'update'}${ext}`
+  const tempPath = path.join(app.getPath('temp'), fileName)
   downloadedUpdatePath = tempPath
 
   function requestWithRedirect (url) {
@@ -266,10 +270,28 @@ function fallbackDownload (info = {}) {
         const releases = JSON.parse(data)
         if (Array.isArray(releases) && releases.length > 0) {
           const match = releases.find(r => r.tag_name === `v${targetTag}` || r.tag_name === targetTag) || releases[0]
-          const exeAsset = match.assets && match.assets.find(a => a.name.endsWith('.exe'))
-          if (exeAsset && exeAsset.browser_download_url) {
-            console.log('[UpdateCheck] Starting direct in-app download stream from:', exeAsset.browser_download_url)
-            downloadUpdateDirectly(exeAsset.browser_download_url, match.tag_name)
+          
+          let platformAsset = null
+          if (process.platform === 'darwin') {
+            // On macOS: prioritize .dmg, then .zip
+            platformAsset = match.assets && (
+              match.assets.find(a => a.name.endsWith('.dmg')) ||
+              match.assets.find(a => a.name.endsWith('.zip') && !a.name.includes('win'))
+            )
+          } else if (process.platform === 'win32') {
+            // On Windows: prioritize .exe
+            platformAsset = match.assets && match.assets.find(a => a.name.endsWith('.exe'))
+          } else {
+            // On Linux: prioritize AppImage or deb
+            platformAsset = match.assets && (
+              match.assets.find(a => a.name.endsWith('.AppImage')) ||
+              match.assets.find(a => a.name.endsWith('.deb'))
+            )
+          }
+
+          if (platformAsset && platformAsset.browser_download_url) {
+            console.log(`[UpdateCheck] Starting direct in-app download for ${process.platform} (${platformAsset.name}) from:`, platformAsset.browser_download_url)
+            downloadUpdateDirectly(platformAsset.browser_download_url, match.tag_name, platformAsset.name)
             return
           }
         }
