@@ -40,11 +40,11 @@ async function main() {
   fs.writeFileSync(path.join(iconsDir, 'icon.png'), square512)
   fs.writeFileSync(path.join(iconsDir, 'app-icon.png'), rounded512)
 
-  // 3. Generate icon.ico from multiple sizes for best Windows taskbar and desktop rendering
+  // 3. Generate icon.ico from multiple standard sizes (256, 128, 64, 48, 32, 16) for NSIS and Windows
   console.log('Generating ICO file...')
-  const icoBuffer = await pngToIco([
-    path.join(iconsDir, 'logo-v1-drop-rounded.png')
-  ])
+  const icoSizes = [256, 128, 64, 48, 32, 16]
+  const icoBuffers = icoSizes.map(size => renderSvg(roundedSvgPath, size))
+  const icoBuffer = await pngToIco(icoBuffers)
   fs.writeFileSync(path.join(iconsDir, 'icon.ico'), icoBuffer)
   fs.writeFileSync(path.join(__dirname, '..', 'assets', 'icon.ico'), icoBuffer)
   fs.writeFileSync(path.join(__dirname, '..', 'assets', 'icon.png'), rounded512)

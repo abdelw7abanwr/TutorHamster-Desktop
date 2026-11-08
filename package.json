@@ -5,14 +5,53 @@
   "main": "app/main.js",
   "scripts": {
     "start": "electron .",
-    "build:icons": "node scripts/convert-icons.js"
+    "build:icons": "node scripts/convert-icons.js",
+    "dist": "electron-builder --win",
+    "dist:portable": "electron-builder --win portable",
+    "dist:nsis": "electron-builder --win nsis"
   },
   "repository": "https://github.com/abdelw7abanwr/TutorHamster-Desktop",
   "build": {
     "appId": "com.tutorhamster.desktop",
     "productName": "TutorHamster",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "app/**/*",
+      "assets/**/*",
+      "locales/**/*",
+      "package.json"
+    ],
     "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "assets/icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TutorHamster",
+      "installerIcon": "assets/icons/icon.ico",
+      "uninstallerIcon": "assets/icons/icon.ico",
+      "installerHeaderIcon": "assets/icons/icon.ico"
+    },
+    "portable": {
+      "splashImage": "assets/icons/logo-v1-drop-rounded.png"
     },
     "mac": {
       "icon": "assets/icons/logo-v1-drop-rounded.png"
@@ -40,6 +79,7 @@
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
     "electron": "^45.1.0",
+    "electron-builder": "^26.18.0",
     "png-to-ico": "^3.0.2"
   },
   "dependencies": {
