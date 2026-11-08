@@ -22,6 +22,13 @@ if (fs.existsSync(envPath) && typeof process.loadEnvFile === 'function') {
   }
 }
 
+// Icon paths
+const iconsDir = path.join(__dirname, '..', 'assets', 'icons')
+const appIconIco = path.join(iconsDir, 'icon.ico')
+const appIconPng = path.join(iconsDir, 'logo-v1-drop-rounded.png')
+const appIcon = (process.platform === 'win32' && fs.existsSync(appIconIco)) ? appIconIco : appIconPng
+const notificationIcon = path.join(iconsDir, 'notification-icon.png')
+
 // Media permissions tracking
 let mediaPermissionStatus = 'unknown'
 let welcomeNotificationSent = false
@@ -39,6 +46,7 @@ function sendWelcomeNotification () {
     const notification = new Notification({
       title: localeData.welcomeTitle || 'Welcome to TutorHamster! 🎓',
       body: localeData.welcomeBody || 'Wishing you an inspiring and delightful learning journey today.',
+      icon: notificationIcon,
       silent: false
     })
 
@@ -62,6 +70,7 @@ function sendInternetRestoredNotification () {
     const notification = new Notification({
       title: localeData.onlineNotificationTitle || 'Internet Connected! 🌐',
       body: localeData.onlineNotificationBody || 'Connection restored successfully. Loading the platform now.',
+      icon: notificationIcon,
       silent: false
     })
 
@@ -225,6 +234,7 @@ function createWindows () {
     center: true,
     resizable: false,
     show: false,
+    icon: appIcon,
     webPreferences: {
       preload: path.join(__dirname, 'splash-preload.js'),
       contextIsolation: true,
@@ -246,6 +256,7 @@ function createWindows () {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
+    icon: appIcon,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

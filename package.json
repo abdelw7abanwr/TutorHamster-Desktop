@@ -4,12 +4,22 @@
   "description": "TutorHamster Desktop App",
   "main": "app/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build:icons": "node scripts/convert-icons.js"
   },
   "repository": "https://github.com/abdelw7abanwr/TutorHamster-Desktop",
   "build": {
     "appId": "com.tutorhamster.desktop",
     "productName": "TutorHamster",
+    "win": {
+      "icon": "assets/icons/icon.ico"
+    },
+    "mac": {
+      "icon": "assets/icons/logo-v1-drop-rounded.png"
+    },
+    "linux": {
+      "icon": "assets/icons/logo-v1-drop-rounded.png"
+    },
     "publish": [
       {
         "provider": "github",
