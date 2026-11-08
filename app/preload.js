@@ -6,8 +6,9 @@
 const { ipcRenderer, contextBridge } = require('electron')
 
 // Safely bridge localized strings and network API for offline screen
+let localeData = {}
 try {
-  const localeData = ipcRenderer.sendSync('get-splash-locale')
+  localeData = ipcRenderer.sendSync('get-splash-locale') || {}
   contextBridge.exposeInMainWorld('offlineLocale', localeData)
 } catch (e) {}
 
@@ -234,7 +235,7 @@ let currentUpdateInfo = null
 function createUpdateModal() {
   if (updateModalHost) return updateModalHost
 
-  const locale = (window.offlineLocale || {
+  const locale = {
     dir: 'rtl',
     updateAvailableTitle: 'تحديث جديد متوفر! 🚀',
     updateAvailableDesc: 'يتوفر إصدار جديد ({version}) يحتوي على تحسينات ومزايا جديدة. هل ترغب في تنزيله الآن؟',
@@ -243,10 +244,15 @@ function createUpdateModal() {
     updateDownloading: 'جاري تنزيل التحديث...',
     updateReadyTitle: 'التحديث جاهز للتثبيت! 🎉',
     updateReadyDesc: 'تم تنزيل التحديث بنجاح. هل تريد إعادة تشغيل التطبيق وتثبيته الآن؟',
-    updateRestartBtn: 'إعادة التشغيل والتثبيت'
-  })
+    updateRestartBtn: 'إعادة التشغيل والتثبيت',
+    ...localeData
+  }
 
   updateModalHost = document.createElement('tutor-apple-update-modal')
+  updateModalHost.style.position = 'fixed'
+  updateModalHost.style.inset = '0'
+  updateModalHost.style.zIndex = '2147483647'
+  updateModalHost.style.display = 'none'
   updateModalShadow = updateModalHost.attachShadow({ mode: 'closed' })
 
   const style = document.createElement('style')
@@ -434,54 +440,83 @@ function createUpdateModal() {
 
   btnLater.addEventListener('click', () => {
     updateModalHost.classList.remove('active')
+    updateModalHost.style.display = 'none'
+    updateModalDismissed = true
   })
 
   return updateModalHost
 }
 
-ipcRenderer.on('update-available', (event, info) => {
-  if (isOfflinePage) return
+let updateModalDismissed = false
+
+function showUpdateModal (info) {
+  if (window.location.href.includes('offline.html')) return
+  if (!info || updateModalDismissed) return
   currentUpdateInfo = info
+
   const host = createUpdateModal()
-  if (!document.body && document.documentElement) {
-    document.documentElement.appendChild(host)
-  } else if (document.body && !host.parentElement) {
-    document.body.appendChild(host)
+  const mount = () => {
+    const root = document.documentElement || document.body
+    if (root && !host.parentElement) {
+      root.appendChild(host)
+    }
+
+    const locale = { ...localeData }
+    const descEl = updateModalShadow && updateModalShadow.getElementById('update-desc')
+    if (descEl && (locale.updateAvailableDesc || info.version)) {
+      const template = locale.updateAvailableDesc || 'يتوفر إصدار جديد ({version}) يحتوي على تحسينات ومزايا جديدة. هل ترغب في تنزيله الآن؟'
+      descEl.innerText = template.replace('{version}', info.version || '')
+    }
+
+    host.style.display = 'flex'
+    // Microtask to allow CSS transition
+    setTimeout(() => {
+      host.classList.add('active')
+    }, 20)
   }
 
-  const locale = window.offlineLocale || {}
-  const descEl = updateModalShadow.getElementById('update-desc')
-  if (descEl && locale.updateAvailableDesc) {
-    descEl.innerText = locale.updateAvailableDesc.replace('{version}', info.version || '')
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mount, { once: true })
+  } else {
+    mount()
   }
+}
 
-  host.classList.add('active')
+ipcRenderer.on('update-available', (event, info) => {
+  showUpdateModal(info)
+})
+
+// Ensure modal re-mounts if single page application navigates or dynamically replaces root
+window.addEventListener('load', () => {
+  if (currentUpdateInfo && !updateModalDismissed) {
+    showUpdateModal(currentUpdateInfo)
+  }
 })
 
 ipcRenderer.on('update-download-progress', (event, { percent }) => {
   if (!updateModalShadow) return
   const fill = updateModalShadow.getElementById('update-progress-fill')
   const label = updateModalShadow.getElementById('update-progress-label')
-  const locale = window.offlineLocale || {}
+  const locale = { ...localeData }
   if (fill) fill.style.width = percent + '%'
-  if (label) label.innerText = `${locale.updateDownloading || 'Downloading...'} ${percent}%`
+  if (label) label.innerText = `${locale.updateDownloading || 'جاري التنزيل...'} ${percent}%`
 })
 
 ipcRenderer.on('update-downloaded', (event, { version }) => {
   if (!updateModalShadow) return
-  const locale = window.offlineLocale || {}
+  const locale = { ...localeData }
   const titleEl = updateModalShadow.getElementById('update-title')
   const descEl = updateModalShadow.getElementById('update-desc')
   const progressBox = updateModalShadow.getElementById('update-progress-box')
   const btnDownload = updateModalShadow.getElementById('btn-update-download')
   const btnLater = updateModalShadow.getElementById('btn-update-later')
 
-  if (titleEl) titleEl.innerText = locale.updateReadyTitle || 'Update Ready! 🎉'
-  if (descEl) descEl.innerText = locale.updateReadyDesc || 'Restart to install.'
+  if (titleEl) titleEl.innerText = locale.updateReadyTitle || 'التحديث جاهز للتثبيت! 🎉'
+  if (descEl) descEl.innerText = locale.updateReadyDesc || 'تم تنزيل التحديث بنجاح. هل تريد إعادة تشغيل التطبيق وتثبيته الآن؟'
   if (progressBox) progressBox.style.display = 'none'
 
   if (btnDownload) {
-    btnDownload.innerText = locale.updateRestartBtn || 'Restart & Install'
+    btnDownload.innerText = locale.updateRestartBtn || 'إعادة التشغيل والتثبيت'
     btnDownload.dataset.state = 'ready'
     btnDownload.style.display = 'flex'
   }

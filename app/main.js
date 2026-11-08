@@ -145,13 +145,16 @@ if (ghToken) {
   } catch (e) {}
 }
 
+let latestDetectedUpdate = null
+
 autoUpdater.on('update-available', (info) => {
   console.log('[UpdateCheck] Update available via autoUpdater:', info.version)
+  latestDetectedUpdate = {
+    version: info.version,
+    releaseNotes: info.releaseNotes || ''
+  }
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('update-available', {
-      version: info.version,
-      releaseNotes: info.releaseNotes || ''
-    })
+    mainWindow.webContents.send('update-available', latestDetectedUpdate)
   }
 })
 
@@ -174,6 +177,8 @@ autoUpdater.on('update-downloaded', (info) => {
 
 autoUpdater.on('error', (err) => {
   console.log('[UpdateCheck] autoUpdater status/error:', err.message)
+  // Seamless fallback to direct GitHub check so modal ALWAYS shows
+  checkGitHubReleasesDirectly()
 })
 
 // Handle download request from renderer UI
@@ -204,9 +209,16 @@ function checkForAppUpdates () {
   console.log(`[UpdateCheck] Checking for latest releases... (Current App Version: v${app.getVersion()})`)
   if (app.isPackaged) {
     try {
-      autoUpdater.checkForUpdates()
+      const p = autoUpdater.checkForUpdates()
+      if (p && typeof p.catch === 'function') {
+        p.catch(err => {
+          console.log('[UpdateCheck] autoUpdater promise error:', err.message)
+          checkGitHubReleasesDirectly()
+        })
+      }
     } catch (err) {
       console.log('[UpdateCheck] autoUpdater check error:', err.message)
+      checkGitHubReleasesDirectly()
     }
   } else {
     checkGitHubReleasesDirectly()
@@ -244,12 +256,13 @@ function checkGitHubReleasesDirectly () {
             console.log(`[UpdateCheck] Latest release on GitHub is: ${release.tag_name} | Current Version: v${currentVersion}`)
             if (latestTag && latestTag !== currentVersion) {
               console.log(`[UpdateCheck] New version found (${release.tag_name})! Prompting in-app modal...`)
+              latestDetectedUpdate = {
+                version: release.tag_name,
+                releaseNotes: release.body || '',
+                downloadUrl: release.html_url
+              }
               if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.webContents.send('update-available', {
-                  version: release.tag_name,
-                  releaseNotes: release.body || '',
-                  downloadUrl: release.html_url
-                })
+                mainWindow.webContents.send('update-available', latestDetectedUpdate)
               }
             } else {
               console.log(`[UpdateCheck] App is currently up-to-date (v${currentVersion}).`)
@@ -309,6 +322,11 @@ function checkUpdatesForSplash () {
             latestVersion = latestTag
             if (latestTag && latestTag !== currentVersion) {
               isUpToDate = false
+              latestDetectedUpdate = {
+                version: release.tag_name || latestTag,
+                releaseNotes: release.body || '',
+                downloadUrl: release.html_url
+              }
             }
           }
         } catch (e) {}
@@ -419,6 +437,14 @@ function createWindows () {
         if (mainWindow.isVisible()) {
           sendWelcomeNotification()
         }
+        // Ensure in-app update popup appears if an update was detected
+        if (latestDetectedUpdate) {
+          setTimeout(() => {
+            if (mainWindow && !mainWindow.isDestroyed() && latestDetectedUpdate) {
+              mainWindow.webContents.send('update-available', latestDetectedUpdate)
+            }
+          }, 1200)
+        }
       }
     }
   })
@@ -448,6 +474,9 @@ function createWindows () {
       // Check for updates shortly after main window opens
       setTimeout(() => {
         checkForAppUpdates()
+        if (latestDetectedUpdate && mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('update-available', latestDetectedUpdate)
+        }
       }, 2500)
 
       // Periodically check for updates every 30 minutes while the app is running
