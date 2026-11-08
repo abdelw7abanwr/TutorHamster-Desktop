@@ -1,6 +1,6 @@
 {
   "name": "tutorhamster-desktop",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "TutorHamster Desktop App",
   "main": "app/main.js",
   "scripts": {
@@ -62,13 +62,12 @@
     "linux": {
       "icon": "assets/icons/logo-v1-drop-rounded.png"
     },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "abdelw7abanwr",
-        "repo": "TutorHamster-Desktop"
-      }
-    ]
+    "publish": {
+      "provider": "github",
+      "owner": "abdelw7abanwr",
+      "repo": "TutorHamster-Desktop",
+      "releaseType": "release"
+    }
   },
   "keywords": [
     "Electron",

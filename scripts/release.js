@@ -1,5 +1,6 @@
 const path = require('node:path')
 const fs = require('node:fs')
+const https = require('node:https')
 const { spawn } = require('node:child_process')
 const readline = require('node:readline')
 const { organizeRelease } = require('./organize-release')
@@ -163,14 +164,66 @@ builder.stderr.on('data', chunk => {
   spinner.render()
 })
 
-builder.on('close', code => {
+// Helper to verify and ensure GitHub release draft is published publicly
+function ensureReleasePublished (targetVersion) {
+  return new Promise((resolve) => {
+    if (!token) return resolve()
+    const options = {
+      hostname: 'api.github.com',
+      path: '/repos/abdelw7abanwr/TutorHamster-Desktop/releases',
+      headers: {
+        'User-Agent': 'TutorHamster-Release-Publisher',
+        'Authorization': 'Bearer ' + token
+      }
+    }
+    https.get(options, (res) => {
+      let data = ''
+      res.on('data', chunk => { data += chunk })
+      res.on('end', () => {
+        try {
+          const releases = JSON.parse(data)
+          if (Array.isArray(releases)) {
+            const target = releases.find(r => r.tag_name === `v${targetVersion}` || r.tag_name === targetVersion)
+            if (target && target.draft) {
+              const patchData = JSON.stringify({ draft: false })
+              const patchReq = https.request({
+                hostname: 'api.github.com',
+                path: `/repos/abdelw7abanwr/TutorHamster-Desktop/releases/${target.id}`,
+                method: 'PATCH',
+                headers: {
+                  'User-Agent': 'TutorHamster-Release-Publisher',
+                  'Authorization': 'Bearer ' + token,
+                  'Content-Type': 'application/json',
+                  'Content-Length': Buffer.byteLength(patchData)
+                }
+              }, () => resolve())
+              patchReq.on('error', () => resolve())
+              patchReq.write(patchData)
+              patchReq.end()
+              return
+            }
+          }
+        } catch (e) {}
+        resolve()
+      })
+    }).on('error', () => resolve())
+  })
+}
+
+builder.on('close', async code => {
   if (code === 0) {
+    spinner.setText('Ensuring GitHub release is published and visible to users...')
+    spinner.render()
+
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'))
+    await ensureReleasePublished(pkg.version)
+
     spinner.setText('Organizing release files into structured version folders...')
     spinner.render()
 
     try {
       organizeRelease()
-      spinner.stop('New release built, published, and organized successfully! 🎉', true)
+      spinner.stop(`Release v${pkg.version} built, published, and organized successfully! 🎉`, true)
     } catch (e) {
       spinner.stop('Release published, but could not organize local files: ' + e.message, false)
     }
