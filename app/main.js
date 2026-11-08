@@ -6,6 +6,7 @@ const fs = require('node:fs')
 const https = require('node:https')
 
 // Set Windows AppUserModelId immediately at module load time so taskbar pinning & icon binding works
+app.name = 'TutorHamster'
 if (process.platform === 'win32') {
   app.setAppUserModelId('com.tutorhamster.desktop')
 }
@@ -371,7 +372,7 @@ function createWindows () {
     resizable: false,
     show: false,
     skipTaskbar: true,
-    icon: appIcon,
+    icon: appIconPath,
     webPreferences: {
       preload: path.join(__dirname, 'splash-preload.js'),
       contextIsolation: true,
@@ -394,7 +395,7 @@ function createWindows () {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    icon: appIcon,
+    icon: appIconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -402,7 +403,9 @@ function createWindows () {
     }
   })
 
-  if (!appIcon.isEmpty()) {
+  if (process.platform === 'win32') {
+    mainWindow.setIcon(appIconPath)
+  } else if (!appIcon.isEmpty()) {
     mainWindow.setIcon(appIcon)
   }
 
