@@ -575,8 +575,16 @@ function createWindows () {
     }
   })
 
+  // Ensure window.isElectron is set as soon as the DOM is ready and when loading finishes
+  mainWindow.webContents.on('dom-ready', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.executeJavaScript('window.isElectron = true;').catch(() => {})
+    }
+  })
+
   mainWindow.webContents.on('did-finish-load', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.executeJavaScript('window.isElectron = true;').catch(() => {})
       mainWindow.webContents.send('toggle-apple-loading', false)
       const currentURL = mainWindow.webContents.getURL()
       if (!currentURL.includes('offline.html')) {

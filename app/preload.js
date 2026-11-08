@@ -17,6 +17,11 @@ contextBridge.exposeInMainWorld('offlineAPI', {
   retryConnection: () => ipcRenderer.send('retry-connection')
 })
 
+// Expose desktop environment flag so website detects it 100%
+try {
+  contextBridge.exposeInMainWorld('isElectron', true)
+} catch (e) {}
+
 const isOfflinePage = window.location.href.includes('offline.html')
 
 let hudHost = null
