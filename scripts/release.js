@@ -26,7 +26,7 @@ const env = { ...process.env, GH_TOKEN: token, GITHUB_TOKEN: token }
 
 console.log('🚀 Building and publishing new release to GitHub Releases...\n')
 
-const builder = spawn('npx', ['electron-builder', '--win', '--publish', 'always'], {
+const builder = spawn('npx', ['electron-builder', '--win', 'nsis', '--publish', 'always'], {
   stdio: 'inherit',
   shell: true,
   env

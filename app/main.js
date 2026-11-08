@@ -337,6 +337,11 @@ function createWindows () {
       setTimeout(() => {
         checkForAppUpdates()
       }, 2500)
+
+      // Periodically check for updates every 30 minutes while the app is running
+      setInterval(() => {
+        checkForAppUpdates()
+      }, 30 * 60 * 1000)
     }
   }, 10000)
 
