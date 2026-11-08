@@ -126,7 +126,11 @@ process.on('uncaughtException', err => {
 })
 
 const builderCli = path.join(__dirname, '..', 'node_modules', 'electron-builder', 'cli.js')
-const builder = spawn(process.execPath, [builderCli, '--win', 'nsis', '--publish', 'always'], {
+const targetArgs = process.platform === 'darwin'
+  ? ['--mac', '--publish', 'always']
+  : ['--win', 'nsis', '--publish', 'always']
+
+const builder = spawn(process.execPath, [builderCli, ...targetArgs], {
   stdio: ['inherit', 'pipe', 'pipe'],
   env
 })
@@ -140,11 +144,15 @@ builder.stdout.on('data', chunk => {
   if (str.includes('installing native dependencies') || str.includes('executing @electron/rebuild')) {
     spinner.setText('Rebuilding native dependencies for Electron...')
   } else if (str.includes('packaging')) {
-    spinner.setText('Packaging application resources (win32-x64)...')
+    spinner.setText(process.platform === 'darwin' ? 'Packaging application resources for macOS...' : 'Packaging application resources (win32-x64)...')
   } else if (str.includes('downloading')) {
     spinner.setText('Downloading Electron runtime binaries...')
   } else if (str.includes('building') && str.includes('nsis')) {
     spinner.setText('Compiling NSIS Setup installer (compressing files, please wait)...')
+  } else if (str.includes('building') && str.includes('dmg')) {
+    spinner.setText('Building macOS DMG disk image installer...')
+  } else if (str.includes('building') && str.includes('zip')) {
+    spinner.setText('Packaging macOS ZIP archive...')
   } else if (str.includes('building block map')) {
     spinner.setText('Generating block map for delta auto-updates...')
   } else if (str.includes('uploading')) {

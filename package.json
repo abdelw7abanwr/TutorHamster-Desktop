@@ -57,7 +57,27 @@
       "splashImage": "assets/icons/logo-v1-drop-rounded.png"
     },
     "mac": {
+      "category": "public.app-category.education",
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "icon": "assets/icons/logo-v1-drop-rounded.png"
+    },
+    "dmg": {
+      "title": "TutorHamster ${version}",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     },
     "linux": {
       "icon": "assets/icons/logo-v1-drop-rounded.png"
