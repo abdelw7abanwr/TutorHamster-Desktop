@@ -8,7 +8,8 @@
     "build:icons": "node scripts/convert-icons.js",
     "dist": "electron-builder --win",
     "dist:portable": "electron-builder --win portable",
-    "dist:nsis": "electron-builder --win nsis"
+    "dist:nsis": "electron-builder --win nsis",
+    "release": "node scripts/release.js"
   },
   "repository": "https://github.com/abdelw7abanwr/TutorHamster-Desktop",
   "build": {
