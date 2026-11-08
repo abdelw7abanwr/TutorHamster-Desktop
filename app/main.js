@@ -1,7 +1,9 @@
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, Menu, ipcMain, session, Notification } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, session, Notification, shell } = require('electron')
+const { autoUpdater } = require('electron-updater')
 const path = require('node:path')
 const fs = require('node:fs')
+const https = require('node:https')
 const localesModulePath = fs.existsSync(path.join(__dirname, '..', 'locales'))
   ? path.join(__dirname, '..', 'locales')
   : path.join(__dirname, 'locales')
@@ -106,6 +108,109 @@ ipcMain.on('retry-connection', () => {
   }
 })
 
+// Configure electron-updater
+autoUpdater.autoDownload = false
+autoUpdater.autoInstallOnAppQuit = true
+
+autoUpdater.on('update-available', (info) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update-available', {
+      version: info.version,
+      releaseNotes: info.releaseNotes || ''
+    })
+  }
+})
+
+autoUpdater.on('download-progress', (progressObj) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update-download-progress', {
+      percent: Math.floor(progressObj.percent)
+    })
+  }
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update-downloaded', {
+      version: info.version
+    })
+  }
+})
+
+autoUpdater.on('error', (err) => {
+  console.log('autoUpdater error:', err.message)
+})
+
+// Handle download request from renderer UI
+ipcMain.on('start-download-update', (event, { downloadUrl } = {}) => {
+  if (app.isPackaged) {
+    try {
+      autoUpdater.downloadUpdate()
+    } catch (e) {
+      if (downloadUrl) shell.openExternal(downloadUrl)
+    }
+  } else if (downloadUrl) {
+    shell.openExternal(downloadUrl)
+  }
+})
+
+// Handle restart & install request
+ipcMain.on('quit-and-install-update', () => {
+  if (app.isPackaged) {
+    autoUpdater.quitAndInstall()
+  } else {
+    app.relaunch()
+    app.quit()
+  }
+})
+
+// Check for updates function (Packaged & Development fallback)
+function checkForAppUpdates () {
+  if (app.isPackaged) {
+    try {
+      autoUpdater.checkForUpdates()
+    } catch (err) {
+      console.log('Update check error:', err.message)
+    }
+  } else {
+    checkGitHubReleasesDirectly()
+  }
+}
+
+// GitHub Releases direct API check
+function checkGitHubReleasesDirectly () {
+  const options = {
+    hostname: 'api.github.com',
+    path: '/repos/abdelw7abanwr/TutorHamster-Desktop/releases/latest',
+    headers: {
+      'User-Agent': 'TutorHamster-Desktop-App'
+    }
+  }
+
+  https.get(options, (res) => {
+    let data = ''
+    res.on('data', chunk => { data += chunk })
+    res.on('end', () => {
+      if (res.statusCode === 200) {
+        try {
+          const release = JSON.parse(data)
+          const latestTag = (release.tag_name || '').replace(/^v/, '')
+          const currentVersion = app.getVersion()
+          if (latestTag && latestTag !== currentVersion) {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('update-available', {
+                version: release.tag_name,
+                releaseNotes: release.body || '',
+                downloadUrl: release.html_url
+              })
+            }
+          }
+        } catch (e) {}
+      }
+    })
+  }).on('error', () => {})
+}
+
 let mainWindow = null
 let splashWindow = null
 
@@ -205,6 +310,10 @@ function createWindows () {
       mainWindow.focus()
       // Send welcome notification as soon as the main window opens
       sendWelcomeNotification()
+      // Check for updates shortly after main window opens
+      setTimeout(() => {
+        checkForAppUpdates()
+      }, 2500)
     }
   }, 10000)
 

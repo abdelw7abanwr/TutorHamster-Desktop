@@ -6,7 +6,18 @@
   "scripts": {
     "start": "electron ."
   },
-  "repository": "https://github.com/electron/minimal-repro",
+  "repository": "https://github.com/abdelw7abanwr/TutorHamster-Desktop",
+  "build": {
+    "appId": "com.tutorhamster.desktop",
+    "productName": "TutorHamster",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "abdelw7abanwr",
+        "repo": "TutorHamster-Desktop"
+      }
+    ]
+  },
   "keywords": [
     "Electron",
     "quick",
@@ -18,5 +29,8 @@
   "license": "CC0-1.0",
   "devDependencies": {
     "electron": "^45.1.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }
