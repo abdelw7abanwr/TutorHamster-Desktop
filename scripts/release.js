@@ -179,28 +179,50 @@ function ensureReleasePublished (targetVersion) {
     https.get(options, (res) => {
       let data = ''
       res.on('data', chunk => { data += chunk })
-      res.on('end', () => {
+      res.on('end', async () => {
         try {
           const releases = JSON.parse(data)
           if (Array.isArray(releases)) {
-            const target = releases.find(r => r.tag_name === `v${targetVersion}` || r.tag_name === targetVersion)
-            if (target && target.draft) {
+            const tag = `v${targetVersion}`
+            const matches = releases.filter(r => r.tag_name === tag || r.tag_name === targetVersion)
+            
+            // Find the match that has assets
+            const bestRelease = matches.find(r => r.assets && r.assets.length > 0) || matches[0]
+
+            for (const r of matches) {
+              if (bestRelease && r.id !== bestRelease.id && r.draft) {
+                // Delete duplicate empty draft
+                await new Promise(resDel => {
+                  const reqDel = https.request({
+                    hostname: 'api.github.com',
+                    path: `/repos/abdelw7abanwr/TutorHamster-Desktop/releases/${r.id}`,
+                    method: 'DELETE',
+                    headers: { 'User-Agent': 'TutorHamster-Release-Publisher', 'Authorization': 'Bearer ' + token }
+                  }, resDel)
+                  reqDel.on('error', resDel)
+                  reqDel.end()
+                })
+              }
+            }
+
+            if (bestRelease && bestRelease.draft) {
               const patchData = JSON.stringify({ draft: false })
-              const patchReq = https.request({
-                hostname: 'api.github.com',
-                path: `/repos/abdelw7abanwr/TutorHamster-Desktop/releases/${target.id}`,
-                method: 'PATCH',
-                headers: {
-                  'User-Agent': 'TutorHamster-Release-Publisher',
-                  'Authorization': 'Bearer ' + token,
-                  'Content-Type': 'application/json',
-                  'Content-Length': Buffer.byteLength(patchData)
-                }
-              }, () => resolve())
-              patchReq.on('error', () => resolve())
-              patchReq.write(patchData)
-              patchReq.end()
-              return
+              await new Promise(resPatch => {
+                const patchReq = https.request({
+                  hostname: 'api.github.com',
+                  path: `/repos/abdelw7abanwr/TutorHamster-Desktop/releases/${bestRelease.id}`,
+                  method: 'PATCH',
+                  headers: {
+                    'User-Agent': 'TutorHamster-Release-Publisher',
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(patchData)
+                  }
+                }, resPatch)
+                patchReq.on('error', resPatch)
+                patchReq.write(patchData)
+                patchReq.end()
+              })
             }
           }
         } catch (e) {}

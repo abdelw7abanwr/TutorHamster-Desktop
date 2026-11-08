@@ -1,6 +1,6 @@
 {
   "name": "tutorhamster-desktop",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "TutorHamster Desktop App",
   "main": "app/main.js",
   "scripts": {
@@ -65,8 +65,7 @@
     "publish": {
       "provider": "github",
       "owner": "abdelw7abanwr",
-      "repo": "TutorHamster-Desktop",
-      "releaseType": "release"
+      "repo": "TutorHamster-Desktop"
     }
   },
   "keywords": [
