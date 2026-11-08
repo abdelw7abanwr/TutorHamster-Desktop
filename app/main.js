@@ -272,6 +272,67 @@ function checkGitHubReleasesDirectly () {
 let mainWindow = null
 let splashWindow = null
 
+// Helper to check updates specifically for the splash screen
+function checkUpdatesForSplash () {
+  const currentVersion = app.getVersion()
+
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.webContents.send('splash-update-status', {
+      state: 'checking',
+      currentVersion
+    })
+  }
+
+  const headers = { 'User-Agent': 'TutorHamster-Desktop-App' }
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+  if (token) headers['Authorization'] = 'Bearer ' + token
+
+  const options = {
+    hostname: 'api.github.com',
+    path: '/repos/abdelw7abanwr/TutorHamster-Desktop/releases',
+    headers
+  }
+
+  https.get(options, (res) => {
+    let data = ''
+    res.on('data', chunk => { data += chunk })
+    res.on('end', () => {
+      let isUpToDate = true
+      let latestVersion = currentVersion
+
+      if (res.statusCode === 200) {
+        try {
+          const releases = JSON.parse(data)
+          if (Array.isArray(releases) && releases.length > 0) {
+            const release = releases.find(r => !r.draft) || releases[0]
+            const latestTag = (release.tag_name || '').replace(/^v/, '')
+            latestVersion = latestTag
+            if (latestTag && latestTag !== currentVersion) {
+              isUpToDate = false
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.webContents.send('splash-update-status', {
+          state: isUpToDate ? 'up-to-date' : 'update-available',
+          currentVersion,
+          latestVersion
+        })
+      }
+    })
+  }).on('error', () => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.webContents.send('splash-update-status', {
+        state: 'up-to-date',
+        currentVersion,
+        latestVersion: currentVersion
+      })
+    }
+  })
+}
+
 function createWindows () {
   // 1. Create Splash Window
   splashWindow = new BrowserWindow({
@@ -296,6 +357,7 @@ function createWindows () {
 
   splashWindow.once('ready-to-show', () => {
     splashWindow.show()
+    checkUpdatesForSplash()
   })
 
   // 2. Create Main Window in background

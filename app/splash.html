@@ -589,7 +589,7 @@
       <div class="progress-meta">
         <div class="status-text-wrap">
           <!-- Authentic 12-Blade Apple Activity Indicator Spinner -->
-          <div class="apple-spinner">
+          <div class="apple-spinner" id="splash-spinner">
             <div class="bar1"></div>
             <div class="bar2"></div>
             <div class="bar3"></div>
@@ -603,6 +603,10 @@
             <div class="bar11"></div>
             <div class="bar12"></div>
           </div>
+          <!-- Apple-style Green Checkmark SVG -->
+          <svg id="splash-check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none; width: 16px; height: 16px; color: #27c93f; stroke-width: 2.6; flex-shrink: 0;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
           <span id="loading-status"></span>
         </div>
         <span class="progress-percentage" id="progress-percentage">0%</span>
@@ -663,7 +667,37 @@
     document.getElementById('pill-students-text').innerText = lang.students;
     document.getElementById('pill-teachers-text').innerText = lang.teachers;
     document.getElementById('pill-admin-text').innerText = lang.admin;
-    document.getElementById('loading-status').innerText = lang.loading;
+    
+    // Initial status: Checking for updates with authentic Apple activity spinner
+    const loadingStatusEl = document.getElementById('loading-status');
+    const spinnerEl = document.getElementById('splash-spinner');
+    const checkIconEl = document.getElementById('splash-check-icon');
+    loadingStatusEl.innerText = lang.checkingUpdates || 'جاري التحقق من أحدث إصدار متاح...';
+
+    // Real-time Update Status Listener
+    if (window.splashAPI && typeof window.splashAPI.onUpdateStatus === 'function') {
+      window.splashAPI.onUpdateStatus((data) => {
+        if (data.state === 'checking') {
+          if (spinnerEl) spinnerEl.style.display = 'block';
+          if (checkIconEl) checkIconEl.style.display = 'none';
+          loadingStatusEl.innerText = lang.checkingUpdates || 'جاري التحقق من أحدث إصدار متاح...';
+        } else if (data.state === 'up-to-date') {
+          if (spinnerEl) spinnerEl.style.display = 'none';
+          if (checkIconEl) checkIconEl.style.display = 'inline-block';
+          loadingStatusEl.innerText = (lang.upToDate || 'أنت تستخدم أحدث إصدار متوفر').replace('{version}', 'v' + (data.currentVersion || ''));
+          // After 2.5 seconds, transition to platform preparation text
+          setTimeout(() => {
+            if (checkIconEl) checkIconEl.style.display = 'none';
+            if (spinnerEl) spinnerEl.style.display = 'block';
+            loadingStatusEl.innerText = lang.loading || 'جاري تهيئة الفصل الدراسي...';
+          }, 2500);
+        } else if (data.state === 'update-available') {
+          if (spinnerEl) spinnerEl.style.display = 'block';
+          if (checkIconEl) checkIconEl.style.display = 'none';
+          loadingStatusEl.innerText = (lang.updateAvailableBrief || 'يتوفر إصدار جديد!').replace('{version}', 'v' + (data.latestVersion || ''));
+        }
+      });
+    }
 
     // Populate Permission Modal Localized Strings
     document.getElementById('perm-title').innerText = lang.permTitle;
