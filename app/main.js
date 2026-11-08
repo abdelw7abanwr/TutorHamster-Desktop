@@ -31,11 +31,14 @@ if (fs.existsSync(envPath) && typeof process.loadEnvFile === 'function') {
 
 // Icon paths & NativeImage (guarantees correct Win32 taskbar rendering even inside asar)
 const iconsDir = path.join(__dirname, '..', 'assets', 'icons')
-const appIconIco = path.join(iconsDir, 'icon.ico')
-const appIconPng = path.join(iconsDir, 'logo-v1-drop-rounded.png')
+const unpackedIconsDir = iconsDir.replace('app.asar', 'app.asar.unpacked')
+const resolvedIconsDir = fs.existsSync(unpackedIconsDir) ? unpackedIconsDir : iconsDir
+
+const appIconIco = path.join(resolvedIconsDir, 'icon.ico')
+const appIconPng = path.join(resolvedIconsDir, 'logo-v1-drop-rounded.png')
 const appIconPath = (process.platform === 'win32' && fs.existsSync(appIconIco)) ? appIconIco : appIconPng
-const appIcon = nativeImage.createFromPath(appIconPath)
-const notificationIcon = path.join(iconsDir, 'notification-icon.png')
+const appIcon = nativeImage.createFromPath(appIconPng) // 512x512 high-res image with full alpha transparency
+const notificationIcon = path.join(resolvedIconsDir, 'notification-icon.png')
 
 // Media permissions tracking
 let mediaPermissionStatus = 'unknown'
@@ -182,27 +185,147 @@ autoUpdater.on('error', (err) => {
   checkGitHubReleasesDirectly()
 })
 
+let downloadedUpdatePath = null
+
+function downloadUpdateDirectly (fileUrl, version) {
+  const tempPath = path.join(app.getPath('temp'), `TutorHamster-Setup-${version || 'update'}.exe`)
+  downloadedUpdatePath = tempPath
+
+  function requestWithRedirect (url) {
+    const parsed = new URL(url)
+    const options = {
+      hostname: parsed.hostname,
+      path: parsed.pathname + parsed.search,
+      headers: { 'User-Agent': 'TutorHamster-Desktop-App' }
+    }
+    const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+    if (token && parsed.hostname === 'api.github.com') {
+      options.headers['Authorization'] = 'Bearer ' + token
+    }
+
+    https.get(options, res => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return requestWithRedirect(res.headers.location)
+      }
+      if (res.statusCode !== 200) {
+        console.error('[DirectDownload] HTTP error:', res.statusCode)
+        return
+      }
+
+      const total = parseInt(res.headers['content-length'], 10) || 0
+      let received = 0
+      const fileStream = fs.createWriteStream(tempPath)
+
+      res.on('data', chunk => {
+        received += chunk.length
+        if (total > 0 && mainWindow && !mainWindow.isDestroyed()) {
+          const percent = Math.min(100, Math.floor((received / total) * 100))
+          mainWindow.webContents.send('update-download-progress', { percent })
+        }
+      })
+
+      res.pipe(fileStream)
+
+      fileStream.on('finish', () => {
+        fileStream.close(() => {
+          console.log('[DirectDownload] Download complete:', tempPath)
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('update-download-progress', { percent: 100 })
+            mainWindow.webContents.send('update-downloaded', { version })
+          }
+        })
+      })
+
+      fileStream.on('error', err => {
+        fs.unlink(tempPath, () => {})
+        console.error('[DirectDownload] File stream error:', err.message)
+      })
+    }).on('error', err => {
+      console.error('[DirectDownload] Network error:', err.message)
+    })
+  }
+
+  requestWithRedirect(fileUrl)
+}
+
+function fallbackDownload (info = {}) {
+  const targetTag = (info.version || (latestDetectedUpdate && latestDetectedUpdate.version) || '').replace(/^v/, '')
+  const headers = { 'User-Agent': 'TutorHamster-Desktop-App' }
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+  if (token) headers['Authorization'] = 'Bearer ' + token
+
+  https.get({
+    hostname: 'api.github.com',
+    path: '/repos/abdelw7abanwr/TutorHamster-Desktop/releases',
+    headers
+  }, res => {
+    let data = ''
+    res.on('data', chunk => { data += chunk })
+    res.on('end', () => {
+      try {
+        const releases = JSON.parse(data)
+        if (Array.isArray(releases) && releases.length > 0) {
+          const match = releases.find(r => r.tag_name === `v${targetTag}` || r.tag_name === targetTag) || releases[0]
+          const exeAsset = match.assets && match.assets.find(a => a.name.endsWith('.exe'))
+          if (exeAsset && exeAsset.browser_download_url) {
+            console.log('[UpdateCheck] Starting direct in-app download stream from:', exeAsset.browser_download_url)
+            downloadUpdateDirectly(exeAsset.browser_download_url, match.tag_name)
+            return
+          }
+        }
+      } catch (e) {}
+
+      if (info.downloadUrl || (latestDetectedUpdate && latestDetectedUpdate.downloadUrl)) {
+        shell.openExternal(info.downloadUrl || latestDetectedUpdate.downloadUrl)
+      }
+    })
+  }).on('error', () => {
+    if (info.downloadUrl || (latestDetectedUpdate && latestDetectedUpdate.downloadUrl)) {
+      shell.openExternal(info.downloadUrl || latestDetectedUpdate.downloadUrl)
+    }
+  })
+}
+
 // Handle download request from renderer UI
-ipcMain.on('start-download-update', (event, { downloadUrl } = {}) => {
+ipcMain.on('start-download-update', (event, info = {}) => {
   if (app.isPackaged) {
     try {
-      autoUpdater.downloadUpdate()
+      const p = autoUpdater.downloadUpdate()
+      if (p && typeof p.catch === 'function') {
+        p.catch(err => {
+          console.log('[UpdateCheck] autoUpdater.downloadUpdate rejected:', err.message)
+          fallbackDownload(info)
+        })
+      }
     } catch (e) {
-      if (downloadUrl) shell.openExternal(downloadUrl)
+      console.log('[UpdateCheck] autoUpdater.downloadUpdate error:', e.message)
+      fallbackDownload(info)
     }
-  } else if (downloadUrl) {
-    shell.openExternal(downloadUrl)
+  } else {
+    fallbackDownload(info)
   }
 })
 
 // Handle restart & install request
 ipcMain.on('quit-and-install-update', () => {
-  if (app.isPackaged) {
-    autoUpdater.quitAndInstall()
-  } else {
-    app.relaunch()
-    app.quit()
+  if (downloadedUpdatePath && fs.existsSync(downloadedUpdatePath)) {
+    console.log('[UpdateCheck] Launching downloaded installer:', downloadedUpdatePath)
+    shell.openPath(downloadedUpdatePath)
+    setTimeout(() => {
+      app.quit()
+    }, 500)
+    return
   }
+
+  if (app.isPackaged) {
+    try {
+      autoUpdater.quitAndInstall()
+      return
+    } catch (e) {}
+  }
+
+  app.relaunch()
+  app.quit()
 })
 
 // Check for updates function (Packaged & Development fallback)

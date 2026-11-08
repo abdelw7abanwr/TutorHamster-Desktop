@@ -1,6 +1,6 @@
 {
   "name": "tutorhamster-desktop",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "TutorHamster Desktop App",
   "main": "app/main.js",
   "scripts": {
@@ -33,15 +33,13 @@
           "arch": [
             "x64"
           ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
         }
       ],
-      "icon": "assets/icons/icon.ico"
+      "icon": "assets/icons/icon.ico",
+      "asar": true,
+      "asarUnpack": [
+        "assets/icons/**/*"
+      ]
     },
     "nsis": {
       "oneClick": false,

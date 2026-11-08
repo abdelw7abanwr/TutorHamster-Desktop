@@ -172,6 +172,32 @@ builder.stderr.on('data', chunk => {
   spinner.render()
 })
 
+function uploadAssetFile (uploadUrl, filePath, assetName, contentType) {
+  return new Promise((resolve) => {
+    if (!fs.existsSync(filePath)) return resolve(false)
+    const fileData = fs.readFileSync(filePath)
+    const url = new URL(uploadUrl.replace(/\{.*\}/, '') + '?name=' + encodeURIComponent(assetName))
+    const req = https.request({
+      hostname: url.hostname,
+      path: url.pathname + url.search,
+      method: 'POST',
+      headers: {
+        'User-Agent': 'TutorHamster-Release-Publisher',
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': contentType,
+        'Content-Length': fileData.length
+      }
+    }, res => {
+      let body = ''
+      res.on('data', c => { body += c })
+      res.on('end', () => resolve(res.statusCode === 201))
+    })
+    req.on('error', () => resolve(false))
+    req.write(fileData)
+    req.end()
+  })
+}
+
 // Helper to verify and ensure GitHub release draft is published publicly
 function ensureReleasePublished (targetVersion) {
   return new Promise((resolve) => {
@@ -194,8 +220,41 @@ function ensureReleasePublished (targetVersion) {
             const tag = `v${targetVersion}`
             const matches = releases.filter(r => r.tag_name === tag || r.tag_name === targetVersion)
             
-            // Find the match that has assets
-            const bestRelease = matches.find(r => r.assets && r.assets.length > 0) || matches[0]
+            // Find the match that has the actual .exe installer
+            const bestRelease = matches.find(r => r.assets && r.assets.some(a => a.name.endsWith('.exe'))) ||
+                                matches.find(r => r.assets && r.assets.length > 0) ||
+                                matches[0]
+
+            if (bestRelease) {
+              const distDir = path.join(__dirname, '..', 'dist')
+              const existingAssetNames = (bestRelease.assets || []).map(a => a.name)
+              const distFiles = fs.existsSync(distDir) ? fs.readdirSync(distDir) : []
+
+              // Ensure .exe installer is uploaded
+              const exePattern = new RegExp(`^TutorHamster.*${targetVersion}.*\\.exe$`, 'i')
+              const exeFile = distFiles.find(f => exePattern.test(f) && !f.endsWith('.blockmap'))
+              if (exeFile) {
+                const targetName = exeFile.replace(/\s+/g, '-')
+                if (!existingAssetNames.includes(targetName) && !existingAssetNames.includes(exeFile)) {
+                  await uploadAssetFile(bestRelease.upload_url, path.join(distDir, exeFile), targetName, 'application/octet-stream')
+                }
+              }
+
+              // Ensure latest.yml is uploaded
+              const latestYml = path.join(distDir, 'latest.yml')
+              if (fs.existsSync(latestYml) && !existingAssetNames.includes('latest.yml')) {
+                await uploadAssetFile(bestRelease.upload_url, latestYml, 'latest.yml', 'text/yaml')
+              }
+
+              // Ensure blockmap is uploaded
+              const blockmapFile = distFiles.find(f => f.includes(targetVersion) && f.endsWith('.exe.blockmap'))
+              if (blockmapFile) {
+                const targetBmName = blockmapFile.replace(/\s+/g, '-')
+                if (!existingAssetNames.includes(targetBmName) && !existingAssetNames.includes(blockmapFile)) {
+                  await uploadAssetFile(bestRelease.upload_url, path.join(distDir, blockmapFile), targetBmName, 'application/octet-stream')
+                }
+              }
+            }
 
             for (const r of matches) {
               if (bestRelease && r.id !== bestRelease.id && r.draft) {
