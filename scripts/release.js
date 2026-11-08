@@ -1,6 +1,7 @@
 const path = require('node:path')
 const fs = require('node:fs')
 const { spawn } = require('node:child_process')
+const { organizeRelease } = require('./organize-release')
 
 // Automatically load environment variables from .env
 const envPath = path.join(__dirname, '..', '.env')
@@ -26,15 +27,20 @@ const env = { ...process.env, GH_TOKEN: token, GITHUB_TOKEN: token }
 
 console.log('🚀 Building and publishing new release to GitHub Releases...\n')
 
-const builder = spawn('npx', ['electron-builder', '--win', 'nsis', '--publish', 'always'], {
+const cmd = process.platform === 'win32' ? 'npx.cmd' : 'npx'
+const builder = spawn(cmd, ['electron-builder', '--win', 'nsis', '--publish', 'always'], {
   stdio: 'inherit',
-  shell: true,
   env
 })
 
 builder.on('close', code => {
   if (code === 0) {
     console.log('\n✅ New release built and published successfully to GitHub!')
+    try {
+      organizeRelease()
+    } catch (e) {
+      console.error('⚠️ Could not organize release files:', e.message)
+    }
   } else {
     console.error(`\n❌ Publishing failed with exit code: ${code}`)
   }

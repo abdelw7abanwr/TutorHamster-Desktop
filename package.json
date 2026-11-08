@@ -1,14 +1,16 @@
 {
   "name": "tutorhamster-desktop",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "description": "TutorHamster Desktop App",
   "main": "app/main.js",
   "scripts": {
     "start": "electron .",
     "build:icons": "node scripts/convert-icons.js",
-    "dist": "electron-builder --win",
+    "build:mac": "electron-builder --mac && node scripts/organize-release.js",
+    "dist": "electron-builder --win && node scripts/organize-release.js",
     "dist:portable": "electron-builder --win portable",
     "dist:nsis": "electron-builder --win nsis",
+    "organize": "node scripts/organize-release.js",
     "release": "node scripts/release.js"
   },
   "repository": "https://github.com/abdelw7abanwr/TutorHamster-Desktop",
