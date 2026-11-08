@@ -26,6 +26,7 @@
   "checkingUpdates": "Buscando las últimas actualizaciones...",
   "upToDate": "Estás usando la última versión ({version})",
   "updateAvailableBrief": "¡Una nueva versión ({version}) está disponible!",
+  "updateCheckFailed": "Nuestros servidores están muy ocupados en este momento, por favor vuelve a intentarlo más tarde",
   "updateAvailableTitle": "¡Nueva actualización disponible! 🚀",
   "updateAvailableDesc": "Una nueva versión ({version}) está disponible con mejoras. ¿Deseas descargarla ahora?",
   "updateDownloadBtn": "Descargar actualización",

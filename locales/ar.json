@@ -26,6 +26,7 @@
   "checkingUpdates": "جاري التحقق من أحدث إصدار متاح...",
   "upToDate": "أنت تستخدم أحدث إصدار متوفر ({version})",
   "updateAvailableBrief": "يتوفر إصدار جديد ({version})!",
+  "updateCheckFailed": "خوادمنا مشغولة جداً حالياً، يرجى التحقق في وقت لاحق",
   "updateAvailableTitle": "تحديث جديد متوفر! 🚀",
   "updateAvailableDesc": "يتوفر إصدار جديد ({version}) يحتوي على تحسينات ومزايا جديدة. هل ترغب في تنزيله الآن؟",
   "updateDownloadBtn": "تنزيل التحديث",

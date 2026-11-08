@@ -607,6 +607,10 @@
           <svg id="splash-check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none; width: 16px; height: 16px; color: #27c93f; stroke-width: 2.6; flex-shrink: 0;">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
           </svg>
+          <!-- Apple-style Subtle Amber Warning/Busy Icon -->
+          <svg id="splash-busy-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none; width: 16px; height: 16px; color: #f59e0b; stroke-width: 2.2; flex-shrink: 0;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+          </svg>
           <span id="loading-status"></span>
         </div>
         <span class="progress-percentage" id="progress-percentage">0%</span>
@@ -672,6 +676,7 @@
     const loadingStatusEl = document.getElementById('loading-status');
     const spinnerEl = document.getElementById('splash-spinner');
     const checkIconEl = document.getElementById('splash-check-icon');
+    const busyIconEl = document.getElementById('splash-busy-icon');
     loadingStatusEl.innerText = lang.checkingUpdates || 'جاري التحقق من أحدث إصدار متاح...';
 
     // Real-time Update Status Listener
@@ -680,9 +685,11 @@
         if (data.state === 'checking') {
           if (spinnerEl) spinnerEl.style.display = 'block';
           if (checkIconEl) checkIconEl.style.display = 'none';
+          if (busyIconEl) busyIconEl.style.display = 'none';
           loadingStatusEl.innerText = lang.checkingUpdates || 'جاري التحقق من أحدث إصدار متاح...';
         } else if (data.state === 'up-to-date') {
           if (spinnerEl) spinnerEl.style.display = 'none';
+          if (busyIconEl) busyIconEl.style.display = 'none';
           if (checkIconEl) checkIconEl.style.display = 'inline-block';
           loadingStatusEl.innerText = (lang.upToDate || 'أنت تستخدم أحدث إصدار متوفر').replace('{version}', 'v' + (data.currentVersion || ''));
           // After 2.5 seconds, transition to platform preparation text
@@ -694,7 +701,19 @@
         } else if (data.state === 'update-available') {
           if (spinnerEl) spinnerEl.style.display = 'block';
           if (checkIconEl) checkIconEl.style.display = 'none';
+          if (busyIconEl) busyIconEl.style.display = 'none';
           loadingStatusEl.innerText = (lang.updateAvailableBrief || 'يتوفر إصدار جديد!').replace('{version}', 'v' + (data.latestVersion || ''));
+        } else if (data.state === 'failed') {
+          if (spinnerEl) spinnerEl.style.display = 'none';
+          if (checkIconEl) checkIconEl.style.display = 'none';
+          if (busyIconEl) busyIconEl.style.display = 'inline-block';
+          loadingStatusEl.innerText = lang.updateCheckFailed || 'خوادمنا مشغولة جداً حالياً، يرجى التحقق في وقت لاحق';
+          // After 3 seconds, transition to platform preparation text
+          setTimeout(() => {
+            if (busyIconEl) busyIconEl.style.display = 'none';
+            if (spinnerEl) spinnerEl.style.display = 'block';
+            loadingStatusEl.innerText = lang.loading || 'جاري تهيئة الفصل الدراسي...';
+          }, 3000);
         }
       });
     }

@@ -312,22 +312,30 @@ function checkUpdatesForSplash () {
             }
           }
         } catch (e) {}
-      }
 
-      if (splashWindow && !splashWindow.isDestroyed()) {
-        splashWindow.webContents.send('splash-update-status', {
-          state: isUpToDate ? 'up-to-date' : 'update-available',
-          currentVersion,
-          latestVersion
-        })
+        if (splashWindow && !splashWindow.isDestroyed()) {
+          splashWindow.webContents.send('splash-update-status', {
+            state: isUpToDate ? 'up-to-date' : 'update-available',
+            currentVersion,
+            latestVersion
+          })
+        }
+      } else {
+        // Repository check failed or server busy (non-200 response)
+        if (splashWindow && !splashWindow.isDestroyed()) {
+          splashWindow.webContents.send('splash-update-status', {
+            state: 'failed',
+            currentVersion
+          })
+        }
       }
     })
   }).on('error', () => {
+    // Network or server unreachable
     if (splashWindow && !splashWindow.isDestroyed()) {
       splashWindow.webContents.send('splash-update-status', {
-        state: 'up-to-date',
-        currentVersion,
-        latestVersion: currentVersion
+        state: 'failed',
+        currentVersion
       })
     }
   })
