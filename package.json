@@ -98,7 +98,7 @@
   "license": "CC0-1.0",
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
-    "electron": "^45.1.0",
+    "electron": "^45.3.0",
     "electron-builder": "^26.18.0",
     "png-to-ico": "^3.0.2"
   },
